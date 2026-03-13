@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the ResumePulse platform.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique identifier."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "The user's profile picture URL."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin"],
+          "description": "The user's role."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the user was created."
+        }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "Resume": {
+      "title": "Resume",
+      "description": "An uploaded resume and its analysis.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who uploaded the resume."
+        },
+        "fileName": {
+          "type": "string",
+          "description": "The original file name."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "The file extension (e.g., pdf, docx)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Processing", "Analysis Complete", "Failed"],
+          "description": "The current status of the analysis."
+        },
+        "score": {
+          "type": "number",
+          "description": "The overall ATS score (0-100)."
+        },
+        "targetRole": {
+          "type": "string",
+          "description": "The job role the user is targeting."
+        },
+        "matches": {
+          "type": "number",
+          "description": "Number of matched keywords."
+        },
+        "issues": {
+          "type": "number",
+          "description": "Number of formatting/content issues."
+        },
+        "uploadDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the resume was uploaded."
+        },
+        "analysisData": {
+          "type": "string",
+          "description": "JSON stringified detailed analysis data."
+        }
+      },
+      "required": ["userId", "fileName", "fileType", "status", "uploadDate"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profiles."
+    },
+    "/resumes/{resumeId}": {
+      "schema": {
+        "$ref": "#/entities/Resume"
+      },
+      "description": "Stores uploaded resumes and their analysis results."
+    }
+  }
+}
