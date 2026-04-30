@@ -19,6 +19,30 @@ function AnalysisContent() {
 
   useEffect(() => {
     const fetchResume = async () => {
+      const isTemp = searchParams.get('temp');
+      
+      if (isTemp === 'true') {
+        try {
+          const tempData = sessionStorage.getItem('temp_resume_analysis');
+          if (tempData) {
+            const parsed = JSON.parse(tempData);
+            setResume({
+              status: 'Analysis Complete',
+              score: parsed.overallScore,
+              matches: parsed.matches,
+              issues: parsed.issues,
+              targetRole: parsed.targetRole,
+              fileName: 'Uploaded Resume',
+              analysisData: tempData
+            });
+            setLoading(false);
+            return;
+          }
+        } catch(e) {
+          console.error('Failed to load temp data', e);
+        }
+      }
+
       if (!id || !user) {
         setLoading(false);
         return;
@@ -42,7 +66,8 @@ function AnalysisContent() {
     };
 
     fetchResume();
-  }, [id, user, router]);
+  }, [id, user, router, searchParams]);
+
 
   if (loading) {
     return (

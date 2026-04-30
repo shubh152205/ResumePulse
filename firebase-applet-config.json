@@ -1,10 +1,10 @@
 {
-  "projectId": "project-d430bad6-0b7b-4e5b-8ce",
-  "appId": "1:1002817556556:web:0b6e23236d2df31b5b24e9",
-  "apiKey": "AIzaSyAzmzBuY0Qz74wr5L0ntVXr2DxRwXlbjEg",
-  "authDomain": "project-d430bad6-0b7b-4e5b-8ce.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-3eea7590-ea6c-4b96-9d89-202526466941",
-  "storageBucket": "project-d430bad6-0b7b-4e5b-8ce.firebasestorage.app",
-  "messagingSenderId": "1002817556556",
-  "measurementId": ""
+  "projectId": "pulse-resume",
+  "appId": "1:933457454669:web:d2b2ae7bc3afe747d85e04",
+  "apiKey": "AIzaSyBPOAXV9KE629hN1jTgo1Wqg2sziEJG5_I",
+  "authDomain": "pulse-resume.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "pulse-resume.firebasestorage.app",
+  "messagingSenderId": "933457454669",
+  "measurementId": "G-72J7DM0PNN"
 }

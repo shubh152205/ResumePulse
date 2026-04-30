@@ -7,23 +7,6 @@ import { FileText, UploadCloud, CheckCircle2, Star } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { db } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { GoogleGenAI, Type } from '@google/genai';
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        const base64 = reader.result.split(',')[1];
-        resolve(base64);
-      } else {
-        reject(new Error('Failed to convert file to base64'));
-      }
-    };
-    reader.onerror = error => reject(error);
-  });
-};
 
 export default function UploadPage() {
   const { user } = useAuth();
@@ -96,82 +79,64 @@ export default function UploadPage() {
         });
       }, 500);
 
-      const base64Data = await fileToBase64(selectedFile);
-      
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-      
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: {
-          parts: [
-            {
-              inlineData: {
-                mimeType: selectedFile.type,
-                data: base64Data,
-              }
-            },
-            {
-              text: `Analyze this resume. Provide a JSON response with the following structure:
-              {
-                "overallScore": number (0-100, be realistic),
-                "targetRole": string (infer the role they are applying for or their current profession),
-                "matches": number (number of good things/keywords matched),
-                "issues": number (number of issues found),
-                "keywordMatches": string[] (list of keywords found),
-                "formattingIssues": string[] (list of formatting issues or areas of improvement),
-                "suggestions": string[] (list of actionable suggestions to improve the resume)
-              }`
-            }
-          ]
-        },
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              overallScore: { type: Type.NUMBER },
-              targetRole: { type: Type.STRING },
-              matches: { type: Type.NUMBER },
-              issues: { type: Type.NUMBER },
-              keywordMatches: { type: Type.ARRAY, items: { type: Type.STRING } },
-              formattingIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
-              suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
-            },
-            required: ["overallScore", "targetRole", "matches", "issues", "keywordMatches", "formattingIssues", "suggestions"]
-          }
-        }
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        body: formData,
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to analyze resume');
+      }
+
+      const analysisResult = await response.json();
 
       clearInterval(interval);
       setProgress(100);
 
-      const analysisText = response.text;
-      if (!analysisText) {
-        throw new Error("Failed to generate analysis");
-      }
+      console.log('Analysis result received:', analysisResult);
+      console.log('Saving to Firestore...');
       
-      const analysisResult = JSON.parse(analysisText);
+      try {
+        // Create a timeout promise to prevent indefinite hanging
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Firestore connection timed out")), 5000)
+        );
 
-      // Save to Firestore
-      const docRef = await addDoc(collection(db, 'resumes'), {
-        userId: user.uid,
-        fileName: selectedFile.name,
-        fileType: selectedFile.name.split('.').pop() || 'unknown',
-        status: 'Analysis Complete',
-        score: analysisResult.overallScore,
-        targetRole: analysisResult.targetRole,
-        matches: analysisResult.matches,
-        issues: analysisResult.issues,
-        uploadDate: serverTimestamp(),
-        analysisData: analysisText
-      });
+        // Save to Firestore with timeout
+        const docRef = await Promise.race([
+          addDoc(collection(db, 'resumes'), {
+            userId: user.uid,
+            fileName: selectedFile.name,
+            fileType: selectedFile.name.split('.').pop() || 'unknown',
+            status: 'Analysis Complete',
+            score: analysisResult.overallScore || 0,
+            targetRole: analysisResult.targetRole || 'Professional',
+            matches: analysisResult.matches || 0,
+            issues: analysisResult.issues || 0,
+            uploadDate: serverTimestamp(),
+            analysisData: JSON.stringify(analysisResult)
+          }),
+          timeoutPromise
+        ]) as any;
 
-      // Redirect to analysis page with the new document ID
-      router.push(`/analysis?id=${docRef.id}`);
+        console.log('Saved to Firestore with ID:', docRef.id);
+        // Redirect to analysis page with the new document ID
+        router.push(`/analysis?id=${docRef.id}`);
+      } catch (dbError: any) {
+        console.error('Failed to save to Firestore:', dbError);
+        alert(`Warning: Analysis succeeded, but failed to save to database. Error: ${dbError.message}. Make sure Firestore is enabled in your Firebase console!`);
+        // Fallback: save to session storage and redirect without ID (analysis page will need to support this)
+        sessionStorage.setItem('temp_resume_analysis', JSON.stringify(analysisResult));
+        router.push('/analysis?temp=true');
+      }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing resume:', error);
-      alert('An error occurred while processing your resume. Please try again.');
+      alert(`Error: ${error.message || 'An unknown error occurred while processing your resume.'}`);
       setIsProcessing(false);
       setProgress(0);
       setFile(null);

@@ -6,17 +6,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
-  const { user, signInWithGoogle } = useAuth();
-  const router = useRouter();
-
-  const handleGetStarted = async () => {
-    if (user) {
-      router.push('/dashboard');
-    } else {
-      await signInWithGoogle();
-      router.push('/dashboard');
-    }
-  };
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
@@ -41,10 +31,10 @@ export default function LandingPage() {
             </Link>
           ) : (
             <>
-              <button onClick={signInWithGoogle} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Log in</button>
-              <button onClick={handleGetStarted} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
+              <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Log in</Link>
+              <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
                 Get Started
-              </button>
+              </Link>
             </>
           )}
         </div>
@@ -65,10 +55,10 @@ export default function LandingPage() {
               ResumePulse uses advanced AI and expert insights to optimize your resume for ATS systems and recruiters. Get 3x more interviews today.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <button onClick={handleGetStarted} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-base font-semibold transition-colors shadow-lg shadow-blue-600/20 flex items-center gap-2 w-full sm:w-auto justify-center">
+              <Link href={user ? "/upload" : "/signup"} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-base font-semibold transition-colors shadow-lg shadow-blue-600/20 flex items-center gap-2 w-full sm:w-auto justify-center">
                 <UploadCloud className="w-5 h-5" />
                 Upload Your Resume
-              </button>
+              </Link>
               <Link href="/analysis" className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 px-8 py-4 rounded-xl text-base font-semibold transition-colors w-full sm:w-auto text-center">
                 View Sample Review
               </Link>
