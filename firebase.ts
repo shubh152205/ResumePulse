@@ -20,6 +20,17 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Analytics (browser only)
-const analytics = typeof window !== 'undefined' ? isSupported().then(yes => yes ? getAnalytics(app) : null) : null;
+let analytics: any = null;
+if (typeof window !== 'undefined') {
+  isSupported().then(yes => {
+    if (yes) {
+      try {
+        analytics = getAnalytics(app);
+      } catch (e) {
+        console.warn('Analytics failed to initialize', e);
+      }
+    }
+  }).catch(e => console.warn('Analytics support check failed', e));
+}
 
 export { app, db, auth, googleProvider, analytics };
